@@ -1,0 +1,122 @@
+project.ext{
+	localMaven = "${projectDir}/maven"
+}
+
+//buildscript {
+//	repositories {
+////		mavenCentral()
+//		mavenLocal()
+//		maven {
+//			url "file://${projectDir}/maven"
+//		}
+//	}
+//}
+
+apply plugin: 'maven'
+apply plugin: 'java'
+
+jar {
+	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
+repositories {
+		mavenCentral()
+//	mavenLocal()
+	maven {
+		url "file://${projectDir}/maven"
+	}
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+	compile group: 'com.google.code.gson', name: 'gson', version: '2.6.2'
+}
+
+task wrapper(type: Wrapper) {
+	gradleVersion = '2.3'
+}
+
+task resolveCompileSources << {
+		def componentIds = configurations.compile.incoming.resolutionResult.allDependencies.collect { it.selected.id }
+
+		def result = dependencies.createArtifactResolutionQuery()
+														 .forComponents(componentIds)
+														 .withArtifacts(JvmLibrary, SourcesArtifact, JavadocArtifact)
+														 .execute()
+
+	println(">||>>> ${componentIds} - ${configurations.compile.incoming.resolutionResult.allDependencies}")
+
+		for (component in result.resolvedComponents) {
+
+
+			 component.getArtifacts(SourcesArtifact).each {
+
+				println("${component.id.properties} teste")
+				String group = component.id.properties.get("group");
+				String module = component.id.properties.get("module");
+				String displayName = component.id.properties.get("displayName");
+				String version = component.id.properties.get("version");
+
+				String base = "${projectDir}/maven/${group}/${module}".replaceAll("\\.", "/").replaceAll(":", "/");
+				File destPath = new File("${base}/${version}")
+
+//				 new File("${projectDir}/maven/${group}.${module}".replaceAll("\\.", "/")).mkdirs();
+				 println("dest path = ${destPath}")
+				 destPath.mkdirs();
+
+				 def thefile = it.file;
+
+				 println("copiando de: ${thefile.getParentFile().getParentFile()}")
+				 println("copiando para: ${destPath}")
+			ant.copy(
+					todir: destPath,
+					failonerror: false,
+					flatten: true
+			){
+				fileset(dir: thefile.getParentFile().getParentFile()){
+					include("name": "**/*.jar")
+					include("name": "**/*.pom")
+				}
+			}
+//				 Files.copy(it.file.toPath(), new FileOutputStream());
+
+//				println "Source artifact for ${component.id}: ${it.file}"
+			}
+		}
+}
+
+task nx(type: Jar){
+	configurations.compile.collect {
+		println(">>> ${it}")
+	}
+}
+
+task resolveDependency << {
+	def listener = new DependencyResolutionListener() {
+
+		@Override
+		void afterResolve(ResolvableDependencies dependencies) {
+			println "afterResolve: " + dependencies
+			dependencies.dependencies.each {
+				it.artifacts.each {
+					println "resolved artifact: " + it.name + "." + it.classifier + "." + it.extension + "." + it.type + ":" + it.url
+				}
+				println "resolved dependency: " + it
+			}
+			dependencies.files.each {
+				println "dep.file: " + it
+			}
+		}
+
+		@Override
+		void beforeResolve(ResolvableDependencies dependencies) {
+			println "beforeResolve: " + dependencies
+		}
+	}
+	project.getGradle().addListener(listener)
+	def configuration = project.configurations.getByName('compile')
+	def artifacts = new HashSet()
+	configuration.resolvedConfiguration.firstLevelModuleDependencies
+}

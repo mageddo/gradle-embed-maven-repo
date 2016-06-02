@@ -1,0 +1,25 @@
+apply plugin: 'maven'
+apply plugin: 'java'
+
+jar {
+	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
+repositories {
+	maven {
+		url "file://${projectDir}/maven"
+	}
+	mavenCentral()
+}
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
+dependencies {
+	compile group: 'com.google.code.gson', name: 'gson', version: '2.6.2'
+	compile group: 'junit', name: 'junit', version: '4.12'
+}
+
+task wrapper(type: Wrapper) {
+	gradleVersion = '2.3'
+}

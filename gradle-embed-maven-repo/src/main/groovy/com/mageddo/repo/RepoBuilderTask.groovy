@@ -13,7 +13,16 @@ import org.gradle.language.java.artifact.JavadocArtifact
  * @since 6/2/16 4:45 PM
  */
 public class RepoBuilderTask extends DefaultTask {
+
+	/**
+	 * The specified local maven repository
+	 */
 	def mavenRepoFolder;
+
+	RepoBuilderTask(mavenRepoFolder) {
+		this.description = "save all remote dependencies to specified maven repository"
+		this.mavenRepoFolder = mavenRepoFolder
+	}
 
 	File getDestination() {
 		project.file(mavenRepoFolder)
@@ -21,6 +30,8 @@ public class RepoBuilderTask extends DefaultTask {
 
 	@TaskAction
 	void buildRepo(){
+
+		logger.info("M=buildRepo, msg=hello");
 
 		if(!getDestination()){
 			throw new AssertionError("please pass a folder on mavenRepoFolder variable");
@@ -41,12 +52,15 @@ public class RepoBuilderTask extends DefaultTask {
 				def module = component.id.properties.get("module");
 //					def displayName = component.id.properties.get("displayName");
 				def version = component.id.properties.get("version");
+
+				logger.info("M=buildRepo, artifactFile=${thefile}, component=${component}");
+
 				def gradleCacheFolder = getGradleCacheFolder(thefile, group);
 				final File destPath = toLocalDependencyMavenFolder(group, module, version);
 				destPath.mkdirs();
 
-				println("gradle-cache-folder=${gradleCacheFolder}")
-				println("it=${it}, file=${it.file}")
+				logger.info("M=buildRepo, destPath=${destPath}")
+				logger.info("M=buildRepo, gradle-cache-folder=${gradleCacheFolder}")
 
 				copyOnlyFilesToPath(thefile.getParentFile().getParentFile(), destPath);
 
@@ -86,9 +100,9 @@ public class RepoBuilderTask extends DefaultTask {
 						);
 						copyOnlyFilesToPath(dependencyFolder, mavenFolder);
 
-						println("hey ${list.parent.groupId.text()} - ${list.parent.artifactId.text()} - ${list.parent.version.text()}")
+						logger.info("M=buildRepo, parentGroup=${list.parent.groupId.text()}, artifactId=${list.parent.artifactId.text()}, version=${list.parent.version.text()}")
 					}
-					println("${times++} level parents processed")
+					logger.info("M=buildRepo, level=${times++}")
 					if(!hasSomeoneProcessed){
 						break;
 					}
@@ -108,6 +122,9 @@ public class RepoBuilderTask extends DefaultTask {
 	}
 
 	def copyOnlyFilesToPath(fromPath, toPath){
+
+		logger.info("M=copyOnlyFilesToPath, fromPath=${fromPath}, toPath=${toPath}")
+
 		ant.copy(
 				todir: toPath,
 				failonerror: false,

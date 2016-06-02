@@ -19,9 +19,8 @@ public class RepoBuilderTask extends DefaultTask {
 	 */
 	def mavenRepoFolder;
 
-	RepoBuilderTask(mavenRepoFolder) {
+	public RepoBuilderTask() {
 		this.description = "save all remote dependencies to specified maven repository"
-		this.mavenRepoFolder = mavenRepoFolder
 	}
 
 	File getDestination() {
@@ -53,7 +52,7 @@ public class RepoBuilderTask extends DefaultTask {
 //					def displayName = component.id.properties.get("displayName");
 				def version = component.id.properties.get("version");
 
-				logger.info("M=buildRepo, artifactFile=${thefile}, component=${component}");
+				logger.info("M=buildRepo, artifactFile=${thefile}, component=${component.id.properties}");
 
 				def gradleCacheFolder = getGradleCacheFolder(thefile, group);
 				final File destPath = toLocalDependencyMavenFolder(group, module, version);
@@ -114,6 +113,12 @@ public class RepoBuilderTask extends DefaultTask {
 	def String getGradleCacheFolder(dependencyFile, groupId){
 		def absolutePath = dependencyFile.absolutePath
 		def index = absolutePath.indexOf(groupId);
+
+		logger.info(
+				"M=getGradleCacheFolder, dependencyFile={}, groupId={}, index={}",
+				dependencyFile, groupId, index
+		);
+
 		return absolutePath.substring(0, index);
 	}
 

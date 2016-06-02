@@ -20,11 +20,11 @@ jar {
 }
 
 repositories {
-//		mavenCentral()
-//	mavenLocal()
 	maven {
 		url "file://${projectDir}/maven"
 	}
+	mavenCentral()
+//	mavenLocal()
 }
 
 sourceCompatibility = 1.8

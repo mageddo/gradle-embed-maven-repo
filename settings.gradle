@@ -1,0 +1,2 @@
+rootProject.name = "gradle-embed-maven-repo-root"
+include ":gradle-embed-maven-repo"

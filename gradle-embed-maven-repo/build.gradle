@@ -26,10 +26,10 @@ version = "1.0.0"
 group = "com.mageddo"
 
 pluginBundle {
-	website = 'http://www.gradle.org/'
-	vcsUrl = 'https://github.com/gradle/gradle'
-	description = 'Greetings from here!'
-	tags = ['greetings', 'salutations']
+	website = 'https://github.com/mageddo/gradle-embed-maven-repo'
+	vcsUrl = 'https://github.com/mageddo/gradle-embed-maven-repo'
+	description = 'Resolve your maven dependencies from a standalone embed maven local repository folder(on the project directory for example)'
+	tags = ['management', 'dependency', 'repository', 'java', 'groovy']
 
 	plugins {
 		greetingsPlugin {

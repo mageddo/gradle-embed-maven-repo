@@ -20,7 +20,7 @@ jar {
 }
 
 repositories {
-		mavenCentral()
+//		mavenCentral()
 //	mavenLocal()
 	maven {
 		url "file://${projectDir}/maven"
@@ -85,28 +85,46 @@ task resolveCompileSources << {
 //				 println("copiando para: ${destPath}")
 				copyOnlyFilesToPath(thefile.getParentFile().getParentFile(), destPath);
 
+				def readPoms = [:], times = 1;
+				while(true) {
 
-				def xfiles = fileTree("${projectDir}/maven"){
-					include "**/*.pom"
-				}
-				xfiles.each {
-
-					def list = new XmlParser().parse(it);
-					def parentGroup = list.parent.groupId.text();
-					def parentModule  = list.parent.artifactId.text();
-					def parentVersion  = list.parent.version.text();
-
-					if(!parentGroup){
-						  return ;
+					def xfiles = fileTree("${projectDir}/maven") {
+						include "**/*.pom"
 					}
+					boolean hasSomeoneProcessed = false;
+					xfiles.each {
 
-					def mavenFolder = toLocalDependencyMavenFolder(parentGroup, parentModule, parentVersion);
-					mavenFolder.mkdirs();
+						def list = new XmlParser().parse(it);
+						def thisId = toId(list.groupId.text(), list.artifactId.text(), list.version.text());
 
-					def dependencyFolder = new File("${parentGroup}/${parentModule}/${parentVersion}", new File(gradleCacheFolder));
-					copyOnlyFilesToPath(dependencyFolder, mavenFolder);
+						if(readPoms.containsKey(thisId)){
+							println("cached!");
+							 return ;
+						}
+						println("processing!");
+						hasSomeoneProcessed = true;
+						readPoms.put(thisId, null);
 
-					println("hey ${list.parent.groupId.text()} - ${list.parent.artifactId.text()} - ${list.parent.version.text()}")
+						def parentGroup = list.parent.groupId.text();
+						def parentModule = list.parent.artifactId.text();
+						def parentVersion = list.parent.version.text();
+
+						if (!parentGroup) {
+							return;
+						}
+
+						def mavenFolder = toLocalDependencyMavenFolder(parentGroup, parentModule, parentVersion);
+						mavenFolder.mkdirs();
+
+						def dependencyFolder = new File("${parentGroup}/${parentModule}/${parentVersion}", new File(gradleCacheFolder));
+						copyOnlyFilesToPath(dependencyFolder, mavenFolder);
+
+						println("hey ${list.parent.groupId.text()} - ${list.parent.artifactId.text()} - ${list.parent.version.text()}")
+					}
+					println("${times++} level parents processed")
+					if(!hasSomeoneProcessed){
+						break;
+					}
 				}
 //				 Files.copy(it.file.toPath(), new FileOutputStream());
 
@@ -119,6 +137,10 @@ def String getGradleCacheFolder(dependencyFile, groupId){
 	def absolutePath = dependencyFile.absolutePath
 	def index = absolutePath.indexOf(groupId);
 	return absolutePath.substring(0, index);
+}
+
+def String toId(group, module, version){
+	return "${group}:${module}:${version}";
 }
 
 def copyOnlyFilesToPath(fromPath, toPath){

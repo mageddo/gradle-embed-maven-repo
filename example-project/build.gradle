@@ -1,9 +1,27 @@
 apply plugin: 'maven'
 apply plugin: 'java'
 
+buildscript {
+	repositories {
+		mavenLocal()
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+	}
+	dependencies{
+//		classpath "gradle.plugin.com.mageddo:gradle-embed-maven-repo:1.0.6" // from gradle repository
+		classpath group: 'com.mageddo', name: 'gradle-embed-maven-repo', version: '1.0.6'
+	}
+
+}
+
+apply plugin: 'com.mageddo.gradle-embed-maven-repo'
+
 jar {
 	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
+
+
 
 repositories {
 	maven {
@@ -15,11 +33,15 @@ repositories {
 sourceCompatibility = 1.6
 targetCompatibility = 1.6
 
-dependencies {
+dependencies{
 	compile group: 'com.google.code.gson', name: 'gson', version: '2.6.2'
 	compile group: 'junit', name: 'junit', version: '4.12'
 }
 
 task wrapper(type: Wrapper) {
 	gradleVersion = '2.3'
+}
+
+task createMirror(type: RepoBuilder){
+	mavenRepoFolder = file("${projectDir}/maven")
 }

@@ -2,4 +2,4 @@
 .gradle
 build
 .idea
-maven/**/
+**/maven/**/

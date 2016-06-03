@@ -6,8 +6,8 @@ buildscript {
 		}
 	}
 	dependencies{
-//		classpath "gradle.plugin.com.mageddo:gradle-embed-maven-repo:1.0.6" // from gradle repository
-		classpath group: 'com.mageddo', name: 'gradle-embed-maven-repo', version: '1.0.6'
+//		classpath "gradle.plugin.com.mageddo:gradle-embed-maven-repo:1.0.7" // from gradle repository
+		classpath group: 'com.mageddo', name: 'gradle-embed-maven-repo', version: '1.0.7'
 	}
 
 }

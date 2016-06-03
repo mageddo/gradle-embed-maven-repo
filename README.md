@@ -18,7 +18,7 @@ buildscript {
 		}
 	}
 	dependencies{
-		classpath "gradle.plugin.com.mageddo:gradle-embed-maven-repo:1.0.6" // from gradle repository
+		classpath "gradle.plugin.com.mageddo:gradle-embed-maven-repo:1.0.7" // from gradle repository
 	}
 }
 apply plugin: 'java'

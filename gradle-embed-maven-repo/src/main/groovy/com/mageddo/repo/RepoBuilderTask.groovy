@@ -47,6 +47,10 @@ public class RepoBuilderTask extends DefaultTask {
 			component.getArtifacts(SourcesArtifact).each {
 
 				def thefile = it.file;
+				if(it.file.absolutePath.startsWith(mavenRepoFolder.absolutePath)){
+					logger.info("M=buildRepo, status=alreadyOnEmbedRepo");
+					return;
+				}
 				def group = component.id.properties.get("group");
 				def module = component.id.properties.get("module");
 //					def displayName = component.id.properties.get("displayName");

@@ -15,7 +15,6 @@ buildscript {
 allprojects {
 
 	apply plugin: 'java'
-
 	apply plugin: 'com.mageddo.gradle-embed-maven-repo'
 
 	jar {
@@ -31,7 +30,6 @@ allprojects {
 
 	sourceCompatibility = 1.6
 	targetCompatibility = 1.6
-
 
 	task createMirror(type: RepoBuilder){
 		mavenRepoFolder = file("${rootProject.rootDir}/maven")

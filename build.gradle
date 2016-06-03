@@ -1,191 +1,41 @@
-project.ext{
-	localMaven = "${projectDir}/maven"
-}
-
-//buildscript {
-//	repositories {
-////		mavenCentral()
-//		mavenLocal()
-//		maven {
-//			url "file://${projectDir}/maven"
-//		}
-//	}
-//}
-
+apply plugin: "groovy"
 apply plugin: 'maven'
-apply plugin: 'java'
 
-jar {
-	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+buildscript {
+	repositories {
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+	}
+	dependencies {
+		classpath "com.gradle.publish:plugin-publish-plugin:0.9.4"
+	}
 }
+
+apply plugin: "com.gradle.plugin-publish"
 
 repositories {
-	maven {
-		url "file://${projectDir}/maven"
-	}
-	mavenCentral()
-//	mavenLocal()
+	jcenter()
 }
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
 
 dependencies {
-	compile group: 'com.google.code.gson', name: 'gson', version: '2.6.2'
-	compile group: 'junit', name: 'junit', version: '4.12'
+	compile gradleApi()
+	compile localGroovy() 
 }
 
-task wrapper(type: Wrapper) {
-	gradleVersion = '2.3'
-}
+version = "1.0.6"
+group = "com.mageddo"
 
-def toLocalDependencyMavenFolder(group, module, version){
-	String base = "${projectDir}/maven/${group}/${module}".replaceAll("\\.", "/").replaceAll(":", "/");
-	return new File("${base}/${version}")
-}
+pluginBundle {
+	website = 'https://github.com/mageddo/gradle-embed-maven-repo'
+	vcsUrl = 'https://github.com/mageddo/gradle-embed-maven-repo'
+	description = 'Resolve your maven dependencies from a standalone embed maven local repository folder(on the project directory for example)'
+	tags = ['management', 'dependency', 'repository', 'java', 'groovy']
 
-task resolveCompileSources << {
-		def componentIds = configurations.compile.incoming.resolutionResult.allDependencies.collect { it.selected.id }
-
-		def result = dependencies.createArtifactResolutionQuery()
-														 .forComponents(componentIds)
-														 .withArtifacts(JvmLibrary, SourcesArtifact, JavadocArtifact)
-														 .execute()
-
-//	println(">||>>> ${componentIds} - ${configurations.compile.incoming.resolutionResult.allDependencies}")
-
-//	for (component in result.components) {
-//		println("----- ${component.id.properties}")
-//	}
-
-		for (component in result.resolvedComponents) {
-
-
-			 component.getArtifacts(SourcesArtifact).each {
-
-//				println("${component.id.properties} teste")
-			  def thefile = it.file;
-				def group = component.id.properties.get("group");
-				def module = component.id.properties.get("module");
-				def displayName = component.id.properties.get("displayName");
-				def version = component.id.properties.get("version");
-				def gradleCacheFolder = getGradleCacheFolder(thefile, group);
-				File destPath = toLocalDependencyMavenFolder(group, module, version);
-				destPath.mkdirs();
-				println("gradle-cache-folder=${gradleCacheFolder}")
-
-
-//				 new File("${projectDir}/maven/${group}.${module}".replaceAll("\\.", "/")).mkdirs();
-//				 println("dest path = ${destPath}")
-
-
-				 println("it=${it}, file=${it.file}")
-
-//				 println("copiando de: ${thefile.getParentFile().getParentFile()}")
-//				 println("copiando para: ${destPath}")
-				copyOnlyFilesToPath(thefile.getParentFile().getParentFile(), destPath);
-
-				def readPoms = [:], times = 1;
-				while(true) {
-
-					def xfiles = fileTree("${projectDir}/maven") {
-						include "**/*.pom"
-					}
-					boolean hasSomeoneProcessed = false;
-					xfiles.each {
-
-						def list = new XmlParser().parse(it);
-						def thisId = toId(list.groupId.text(), list.artifactId.text(), list.version.text());
-
-						if(readPoms.containsKey(thisId)){
-							println("cached!");
-							 return ;
-						}
-						println("processing!");
-						hasSomeoneProcessed = true;
-						readPoms.put(thisId, null);
-
-						def parentGroup = list.parent.groupId.text();
-						def parentModule = list.parent.artifactId.text();
-						def parentVersion = list.parent.version.text();
-
-						if (!parentGroup) {
-							return;
-						}
-
-						def mavenFolder = toLocalDependencyMavenFolder(parentGroup, parentModule, parentVersion);
-						mavenFolder.mkdirs();
-
-						def dependencyFolder = new File("${parentGroup}/${parentModule}/${parentVersion}", new File(gradleCacheFolder));
-						copyOnlyFilesToPath(dependencyFolder, mavenFolder);
-
-						println("hey ${list.parent.groupId.text()} - ${list.parent.artifactId.text()} - ${list.parent.version.text()}")
-					}
-					println("${times++} level parents processed")
-					if(!hasSomeoneProcessed){
-						break;
-					}
-				}
-//				 Files.copy(it.file.toPath(), new FileOutputStream());
-
-//				println "Source artifact for ${component.id}: ${it.file}"
-			}
-		}
-}
-
-def String getGradleCacheFolder(dependencyFile, groupId){
-	def absolutePath = dependencyFile.absolutePath
-	def index = absolutePath.indexOf(groupId);
-	return absolutePath.substring(0, index);
-}
-
-def String toId(group, module, version){
-	return "${group}:${module}:${version}";
-}
-
-def copyOnlyFilesToPath(fromPath, toPath){
-	ant.copy(
-			todir: toPath,
-			failonerror: false,
-			flatten: true
-	){
-		fileset(dir: fromPath){
-			include("name": "**/*.jar")
-			include("name": "**/*.pom")
+	plugins {
+		greetingsPlugin {
+			id = 'com.mageddo.gradle-embed-maven-repo'
+			displayName = 'Embed Gradle repository'
 		}
 	}
 }
-
-//task nx(type: Jar){
-//	configurations.compile.collect {
-//		println(">>> ${it}")
-//	}
-//}
-
-//task resolveDependency << {
-//	def listener = new DependencyResolutionListener() {
-//
-//		@Override
-//		void afterResolve(ResolvableDependencies dependencies) {
-//			println "afterResolve: " + dependencies
-//			dependencies.dependencies.each {
-//				it.artifacts.each {
-//					println "resolved artifact: " + it.name + "." + it.classifier + "." + it.extension + "." + it.type + ":" + it.url
-//				}
-//				println "resolved dependency: " + it
-//			}
-//			dependencies.files.each {
-//				println "dep.file: " + it
-//			}
-//		}
-//
-//		@Override
-//		void beforeResolve(ResolvableDependencies dependencies) {
-//			println "beforeResolve: " + dependencies
-//		}
-//	}
-//	project.getGradle().addListener(listener)
-//	def configuration = project.configurations.getByName('compile')
-//	def artifacts = new HashSet()
-//	configuration.resolvedConfiguration.firstLevelModuleDependencies
-//}

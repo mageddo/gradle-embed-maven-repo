@@ -27,6 +27,9 @@ public class RepoBuilderTask extends DefaultTask {
 		project.file(mavenRepoFolder)
 	}
 
+	/**
+	 * Download all specified gradle remote dependencies and put on embed maven repository
+	 */
 	@TaskAction
 	void buildRepo(){
 
@@ -114,6 +117,9 @@ public class RepoBuilderTask extends DefaultTask {
 		}
 	}
 
+	/**
+	 * Based on gradle dependency cache file get the gradle cache folder base
+	 */
 	def String getGradleCacheFolder(dependencyFile, groupId){
 		def absolutePath = dependencyFile.absolutePath
 		def index = absolutePath.indexOf(groupId);
@@ -126,10 +132,16 @@ public class RepoBuilderTask extends DefaultTask {
 		return absolutePath.substring(0, index);
 	}
 
+	/**
+	 * Mount a unique id based on the parameters
+	 */
 	def String toId(group, module, version){
 		return "${group}:${module}:${version}";
 	}
 
+	/**
+	 * Copy all files on the specified #fromPath to the #toPath on flat way
+	 */
 	def copyOnlyFilesToPath(fromPath, toPath){
 
 		logger.info("M=copyOnlyFilesToPath, fromPath=${fromPath}, toPath=${toPath}")
@@ -146,6 +158,14 @@ public class RepoBuilderTask extends DefaultTask {
 		}
 	}
 
+	/**
+	 * Get the dependency attributes and mount the folder to the maven
+	 * embed repository
+	 * @param group
+	 * @param module
+	 * @param version
+	 * @return
+	 */
 	def toLocalDependencyMavenFolder(group, module, version){
 		String base = "${mavenRepoFolder.absolutePath}/${group}/${module}".replaceAll("\\.", "/").replaceAll(":", "/");
 		return new File("${base}/${version}")
